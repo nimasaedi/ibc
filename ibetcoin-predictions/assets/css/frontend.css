@@ -1,0 +1,312 @@
+/* استایل‌های بخش کاربران */
+.ibetcoin-prediction-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.price-display {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.current-price .price {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.prediction-form .form-group {
+    margin-bottom: 15px;
+}
+
+.prediction-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.prediction-form input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.prediction-form .hint {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+.odds-display {
+    margin: 15px 0;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.odds-display .odds {
+    font-size: 20px;
+    font-weight: bold;
+    color: #28a745;
+}
+
+.prediction-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.prediction-buttons button {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.prediction-buttons .btn-up {
+    background: #28a745;
+    color: #fff;
+}
+
+.prediction-buttons .btn-down {
+    background: #dc3545;
+    color: #fff;
+}
+
+.prediction-buttons button:hover {
+    opacity: 0.9;
+}
+
+.prediction-timer {
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+
+.timer-display {
+    font-size: 36px;
+    font-weight: bold;
+    color: #007bff;
+    margin: 10px 0;
+}
+
+.prediction-result {
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+
+.result-message {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.result-win {
+    color: #28a745;
+}
+
+.result-lose {
+    color: #dc3545;
+}
+
+.result-pending {
+    color: #ffc107;
+}
+
+.hidden {
+    display: none;
+}
+
+.ibetcoin-wallet-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.wallet-balance .amount {
+    font-size: 32px;
+    font-weight: bold;
+    color: #28a745;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.wallet-actions {
+    display: flex;
+    gap: 15px;
+    margin: 30px 0;
+}
+
+.wallet-actions a {
+    flex: 1;
+    padding: 15px;
+    text-align: center;
+    background: #007bff;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.wallet-actions a:hover {
+    opacity: 0.9;
+}
+
+.wallet-actions .btn-deposit {
+    background: #28a745;
+}
+
+.wallet-actions .btn-withdraw {
+    background: #dc3545;
+}
+
+.ibetcoin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.ibetcoin-table th, .ibetcoin-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.ibetcoin-table th {
+    background: #f8f9fa;
+    font-weight: bold;
+}
+
+.wallet-address {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.wallet-address .address {
+    font-family: monospace;
+    font-size: 18px;
+    word-break: break-all;
+    margin: 10px 0;
+}
+
+.btn-copy {
+    padding: 8px 15px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-copy:hover {
+    background: #0056b3;
+}
+
+.profile-sections {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 30px;
+}
+
+@media (min-width: 992px) {
+    .profile-sections {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.profile-section {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.btn-submit, .btn-save, .btn-change-password, .btn-save-wallet {
+    padding: 10px 20px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-submit:hover, .btn-save:hover, .btn-change-password:hover, .btn-save-wallet:hover {
+    background: #0056b3;
+}
+
+.wins-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.win-card {
+    background: #fff;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.win-user {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.win-amount {
+    color: #28a745;
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+.win-time {
+    font-size: 12px;
+    color: #6c757d;
+}

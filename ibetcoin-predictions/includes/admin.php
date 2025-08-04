@@ -1,7 +1,9 @@
 <?php
 defined('ABSPATH') or die('No script kiddies please!');
 
-// صفحه مدیریت اصلی
+/**
+ * صفحه داشبورد مدیریت
+ */
 function ibetcoin_admin_dashboard() {
     global $wpdb;
 
@@ -17,11 +19,13 @@ function ibetcoin_admin_dashboard() {
 
     include IBETCOIN_PLUGIN_DIR . 'templates/admin/dashboard.php';
 }
-// صفحه مدیریت کاربران
+
+/**
+ * صفحه مدیریت کاربران
+ */
 function ibetcoin_admin_users() {
     global $wpdb;
 
-    $users_table = $wpdb->prefix . 'users';
     $wallets_table = $wpdb->prefix . 'ibetcoin_wallets';
     $transactions_table = $wpdb->prefix . 'ibetcoin_transactions';
 
@@ -32,11 +36,9 @@ function ibetcoin_admin_users() {
             case 'activate':
                 update_user_meta($user_id, 'ibetcoin_account_status', 'active');
                 break;
-
             case 'deactivate':
                 update_user_meta($user_id, 'ibetcoin_account_status', 'inactive');
                 break;
-
             case 'delete':
                 $wpdb->delete($wallets_table, array('user_id' => $user_id));
                 $wpdb->delete($transactions_table, array('user_id' => $user_id));
@@ -53,23 +55,31 @@ function ibetcoin_admin_users() {
 
     include IBETCOIN_PLUGIN_DIR . 'templates/admin/users.php';
 }
-// صفحه تراکنش‌ها
+
+/**
+ * صفحه تراکنش‌ها
+ */
 function ibetcoin_admin_transactions() {
     global $wpdb;
-    
+
     $table = $wpdb->prefix . 'ibetcoin_transactions';
     $users_table = $wpdb->prefix . 'users';
-    
-    // پردازش عملیات
-    if (isset($_POST['action']) && $_POST['action'] == 'update_status') {
+    $wallets_table = $wpdb->prefix . 'ibetcoin_wallets';
+
+    // پردازش فرم آپدیت وضعیت تراکنش‌ها
+    if (isset($_POST['action']) && $_POST['action'] === 'update_status') {
         check_admin_referer('ibetcoin_update_transaction');
-        
+
         $tx_id = isset($_POST['tx_id']) ? intval($_POST['tx_id']) : 0;
         $status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
         $notes = isset($_POST['notes']) ? sanitize_textarea_field($_POST['notes']) : '';
-        
-        if ($tx_id && $status) {
-            $wpdb->update($table, 
+
+        $allowed_statuses = ['pending', 'completed', 'rejected'];
+
+        if ($tx_id && in_array($status, $allowed_statuses, true)) {
+            // به‌روزرسانی وضعیت تراکنش
+            $wpdb->update(
+                $table,
                 array(
                     'status' => $status,
                     'notes' => $notes,
@@ -78,64 +88,129 @@ function ibetcoin_admin_transactions() {
                 ),
                 array('id' => $tx_id)
             );
+
+            // بارگذاری اطلاعات تراکنش برای اعمال تغییرات روی کیف پول کاربر
+            $transaction = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $tx_id));
+
+            if ($transaction && $status === 'completed') {
+                // اگر تراکنش واریز است، موجودی کیف پول کاربر افزایش پیدا کند
+                if ($transaction->type === 'deposit') {
+                    $wallet = $wpdb->get_row($wpdb->prepare("SELECT * FROM $wallets_table WHERE user_id = %d", $transaction->user_id));
+
+                    if ($wallet) {
+                        $new_balance = floatval($wallet->balance) + floatval($transaction->amount);
+
+                        $wpdb->update(
+                            $wallets_table,
+                            [
+                                'balance' => $new_balance,
+                                'updated_at' => current_time('mysql', 1)
+                            ],
+                            ['user_id' => $transaction->user_id],
+                            ['%f', '%s'],
+                            ['%d']
+                        );
+                    } else {
+                        // اگر کیف پول کاربر وجود ندارد، ایجاد شود
+                        $wpdb->insert(
+                            $wallets_table,
+                            [
+                                'user_id' => $transaction->user_id,
+                                'wallet_address' => '',
+                                'balance' => floatval($transaction->amount),
+                                'status' => 'active',
+                                'created_at' => current_time('mysql', 1),
+                                'updated_at' => current_time('mysql', 1)
+                            ],
+                            ['%d', '%s', '%f', '%s', '%s', '%s']
+                        );
+                    }
+                }
+                // اگر تراکنش برداشت است، موجودی کیف پول کاربر کاهش یابد
+                elseif ($transaction->type === 'withdraw') {
+                    $wallet = $wpdb->get_row($wpdb->prepare("SELECT * FROM $wallets_table WHERE user_id = %d", $transaction->user_id));
+
+                    if ($wallet) {
+                        $new_balance = floatval($wallet->balance) - floatval($transaction->amount);
+
+                        // جلوگیری از منفی شدن موجودی کیف پول
+                        if ($new_balance < 0) {
+                            $new_balance = 0;
+                        }
+
+                        $wpdb->update(
+                            $wallets_table,
+                            [
+                                'balance' => $new_balance,
+                                'updated_at' => current_time('mysql', 1)
+                            ],
+                            ['user_id' => $transaction->user_id],
+                            ['%f', '%s'],
+                            ['%d']
+                        );
+                    } else {
+                        // اگر کیف پول کاربر وجود نداشته باشد، می‌توانید خطا لاگ کنید یا به صورت دلخواه مدیریت کنید
+                    }
+                }
+            }
+
+            // ریدایرکت به صفحه تراکنش‌ها بعد از عملیات
+            wp_redirect(admin_url('admin.php?page=ibetcoin-transactions'));
+            exit;
         }
     }
-    
-    // دریافت لیست تراکنش‌ها
-    $transactions = $wpdb->get_results("
-        SELECT t.*, u.user_login, u.user_email 
+
+    // گرفتن لیست تراکنش‌ها بر اساس جدیدترین‌ها (id نزولی)
+    $sql = "
+        SELECT t.*, u.user_login, u.user_email
         FROM $table t
         LEFT JOIN $users_table u ON t.user_id = u.ID
-        ORDER BY t.created_at DESC
+        ORDER BY t.id DESC
         LIMIT 100
-    ");
-    
+    ";
+
+    $transactions = $wpdb->get_results($sql);
+
     include IBETCOIN_PLUGIN_DIR . 'templates/admin/transactions.php';
 }
 
-// صفحه پیش‌بینی‌ها
+
+/**
+ * صفحه پیش‌بینی‌ها
+ */
 function ibetcoin_admin_predictions() {
     global $wpdb;
-    
+
     $table = $wpdb->prefix . 'ibetcoin_predictions';
     $users_table = $wpdb->prefix . 'users';
-    
-    // دریافت لیست پیش‌بینی‌ها
-    $predictions = $wpdb->get_results("
-        SELECT p.*, u.user_login, u.user_email 
-        FROM $table p
-        LEFT JOIN $users_table u ON p.user_id = u.ID
-        ORDER BY p.created_at DESC
-        LIMIT 100
-    ");
-    
+
+    $predictions = $wpdb->get_results("SELECT p.*, u.user_login, u.user_email FROM $table p LEFT JOIN $users_table u ON p.user_id = u.ID ORDER BY p.created_at DESC LIMIT 100");
+
     include IBETCOIN_PLUGIN_DIR . 'templates/admin/predictions.php';
 }
 
-// صفحه مدیریت ضرایب
+/**
+ * صفحه مدیریت ضرایب
+ */
 function ibetcoin_admin_odds() {
     global $wpdb;
-    
+
     $table = $wpdb->prefix . 'ibetcoin_odds';
     $history_table = $wpdb->prefix . 'ibetcoin_odds_history';
     $users_table = $wpdb->prefix . 'users';
-    
-    // پردازش فرم
+
     if (isset($_POST['submit_odds'])) {
         check_admin_referer('ibetcoin_update_odds');
-        
+
         $odds_id = isset($_POST['odds_id']) ? intval($_POST['odds_id']) : 0;
         $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : null;
         $base_odds = isset($_POST['base_odds']) ? floatval($_POST['base_odds']) : 1.5;
         $increase_rate = isset($_POST['increase_rate']) ? floatval($_POST['increase_rate']) : 0.5;
         $is_default = isset($_POST['is_default']) ? 1 : 0;
-        
+
         if ($odds_id) {
-            // دریافت مقادیر قدیمی
             $old_odds = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $odds_id));
-            
-            // به‌روزرسانی ضرایب
-            $wpdb->update($table, 
+            $wpdb->update($table,
                 array(
                     'user_id' => $user_id,
                     'base_odds' => $base_odds,
@@ -145,8 +220,7 @@ function ibetcoin_admin_odds() {
                 ),
                 array('id' => $odds_id)
             );
-            
-            // ثبت تاریخچه تغییرات
+
             $wpdb->insert($history_table, array(
                 'odds_id' => $odds_id,
                 'old_value' => $old_odds->base_odds,
@@ -155,7 +229,6 @@ function ibetcoin_admin_odds() {
                 'reason' => 'Manual update by admin'
             ));
         } else {
-            // ایجاد ضرایب جدید
             $wpdb->insert($table, array(
                 'user_id' => $user_id,
                 'base_odds' => $base_odds,
@@ -164,41 +237,36 @@ function ibetcoin_admin_odds() {
             ));
         }
     }
-    
-    // دریافت لیست ضرایب
-    $odds_list = $wpdb->get_results("
-        SELECT o.*, u.user_login, u.user_email 
-        FROM $table o
-        LEFT JOIN $users_table u ON o.user_id = u.ID
-        ORDER BY o.is_default DESC, o.user_id ASC
-    ");
-    
+
+    $odds_list = $wpdb->get_results("SELECT o.*, u.user_login, u.user_email FROM $table o LEFT JOIN $users_table u ON o.user_id = u.ID ORDER BY o.is_default DESC, o.user_id ASC");
+
     include IBETCOIN_PLUGIN_DIR . 'templates/admin/odds.php';
 }
 
-// صفحه کیف پول اصلی
+/**
+ * صفحه کیف پول اصلی
+ */
 function ibetcoin_admin_wallet() {
     global $wpdb;
-    
+
     $table = $wpdb->prefix . 'ibetcoin_main_wallet';
-    $settings = get_option('ibetcoin_settings');
-    
-    // دریافت موجودی
     $balance = $wpdb->get_var("SELECT balance FROM $table WHERE id = 1");
-    
+
+    $settings = get_option('ibetcoin_settings');
+
     include IBETCOIN_PLUGIN_DIR . 'templates/admin/wallet.php';
 }
 
-// صفحه تنظیمات
+/**
+ * صفحه تنظیمات پلاگین
+ */
 function ibetcoin_admin_settings() {
-    // بررسی مجوزهای کاربر
     if (!current_user_can('manage_options')) {
         wp_die(__('You do not have sufficient permissions to access this page.'));
     }
 
     $settings = get_option('ibetcoin_settings');
 
-    // پردازش فرم
     if (isset($_POST['submit_settings'])) {
         check_admin_referer('ibetcoin_update_settings');
 
@@ -214,35 +282,21 @@ function ibetcoin_admin_settings() {
             'crypto_api' => esc_url_raw($_POST['crypto_api'])
         );
 
-        // ذخیره تنظیمات با بررسی موفقیت آمیز بودن
         if (update_option('ibetcoin_settings', $new_settings)) {
-            add_settings_error(
-                'ibetcoin_settings',
-                'ibetcoin_settings_updated',
-                __('Settings saved successfully!', 'ibetcoin'),
-                'updated'
-            );
+            add_settings_error('ibetcoin_settings', 'ibetcoin_settings_updated', __('Settings saved successfully!', 'ibetcoin'), 'updated');
         } else {
-            add_settings_error(
-                'ibetcoin_settings',
-                'ibetcoin_settings_failed',
-                __('Failed to save settings.', 'ibetcoin'),
-                'error'
-            );
+            add_settings_error('ibetcoin_settings', 'ibetcoin_settings_failed', __('Failed to save settings.', 'ibetcoin'), 'error');
         }
-        
-        // بارگذاری مجدد تنظیمات
+
         $settings = get_option('ibetcoin_settings');
     }
 
-    // نمایش فرم تنظیمات
     include IBETCOIN_PLUGIN_DIR . 'templates/admin/settings.php';
 }
 
-
-
-
-// غیرفعال کردن کش برای صفحات مدیریتی پلاگین
+/**
+ * غیرفعال سازی کش در صفحات مدیریت پلاگین
+ */
 add_action('admin_init', 'ibetcoin_disable_caching');
 function ibetcoin_disable_caching() {
     if (isset($_GET['page']) && strpos($_GET['page'], 'ibetcoin') === 0) {
@@ -252,11 +306,9 @@ function ibetcoin_disable_caching() {
     }
 }
 
-
-
-
-
-// تست خواندن تنظیمات
+/**
+ * نمایش اعلان‌های خطا یا موفقیت در تنظیمات
+ */
 add_action('admin_notices', 'ibetcoin_test_settings');
 function ibetcoin_test_settings() {
     if (isset($_GET['page']) && $_GET['page'] === 'ibetcoin-settings') {
@@ -266,4 +318,3 @@ function ibetcoin_test_settings() {
         echo '</div>';
     }
 }
-

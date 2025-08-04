@@ -272,3 +272,14 @@
     font-size: 13px;
     color: #666;
 }
+
+
+.label-code{
+    background-color: #e0e6ec;
+    display: inline-block;
+    padding: 5px 10px;
+    font-size: 15px;
+    border-radius: 99px;
+    font-weight: 500;
+    width: 64px;
+}

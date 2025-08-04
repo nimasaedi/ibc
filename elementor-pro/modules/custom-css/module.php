@@ -93,7 +93,7 @@ class Module extends Module_Base {
 		$document = Plugin::elementor()->documents->get( $post_css->get_post_id() );
 		$custom_css = $document->get_settings( 'custom_css' );
 
-		$custom_css = trim( $custom_css );
+		$custom_css = trim( $custom_css ?? '' );
 
 		if ( empty( $custom_css ) ) {
 			return;

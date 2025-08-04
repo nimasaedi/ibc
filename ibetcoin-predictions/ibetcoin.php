@@ -85,7 +85,7 @@ function ibetcoin_admin_menu() {
     add_menu_page(
         __('iBetCoin', 'ibetcoin'),
         __('iBetCoin', 'ibetcoin'),
-        'manage_options',
+        'read',  // سطح دسترسی
         'ibetcoin',
         'ibetcoin_admin_dashboard',
         'dashicons-chart-area',
@@ -96,7 +96,7 @@ function ibetcoin_admin_menu() {
         'ibetcoin',
         __('Dashboard', 'ibetcoin'),
         __('Dashboard', 'ibetcoin'),
-        'manage_options',
+        'read',
         'ibetcoin',
         'ibetcoin_admin_dashboard'
     );
@@ -105,7 +105,7 @@ function ibetcoin_admin_menu() {
         'ibetcoin',
         __('Users', 'ibetcoin'),
         __('Users', 'ibetcoin'),
-        'manage_options',
+        'read',
         'ibetcoin-users',
         'ibetcoin_admin_users'
     );
@@ -114,7 +114,7 @@ function ibetcoin_admin_menu() {
         'ibetcoin',
         __('Transactions', 'ibetcoin'),
         __('Transactions', 'ibetcoin'),
-        'manage_options',
+        'read',
         'ibetcoin-transactions',
         'ibetcoin_admin_transactions'
     );
@@ -123,7 +123,7 @@ function ibetcoin_admin_menu() {
         'ibetcoin',
         __('Predictions', 'ibetcoin'),
         __('Predictions', 'ibetcoin'),
-        'manage_options',
+        'read',
         'ibetcoin-predictions',
         'ibetcoin_admin_predictions'
     );
@@ -132,7 +132,7 @@ function ibetcoin_admin_menu() {
         'ibetcoin',
         __('Odds Management', 'ibetcoin'),
         __('Odds Management', 'ibetcoin'),
-        'manage_options',
+        'read',
         'ibetcoin-odds',
         'ibetcoin_admin_odds'
     );
@@ -141,7 +141,7 @@ function ibetcoin_admin_menu() {
         'ibetcoin',
         __('Main Wallet', 'ibetcoin'),
         __('Main Wallet', 'ibetcoin'),
-        'manage_options',
+        'read',
         'ibetcoin-wallet',
         'ibetcoin_admin_wallet'
     );
@@ -150,11 +150,12 @@ function ibetcoin_admin_menu() {
         'ibetcoin',
         __('Settings', 'ibetcoin'),
         __('Settings', 'ibetcoin'),
-        'manage_options',
+        'read',
         'ibetcoin-settings',
         'ibetcoin_admin_settings'
     );
 }
+
 
 // اضافه کردن استایل‌ها و اسکریپت‌ها
 add_action('admin_enqueue_scripts', 'ibetcoin_admin_scripts');
@@ -244,5 +245,42 @@ function ibetcoin_create_necessary_pages() {
                 update_post_meta($page_id, '_wp_page_template', $page['template']);
             }
         }
+    }
+}
+
+
+
+
+///// تابع برداشت
+add_action('wp_ajax_ibetcoin_request_withdrawal', 'ibetcoin_handle_withdrawal_request');
+
+function ibetcoin_handle_withdrawal_request() {
+    check_ajax_referer('ibetcoin-nonce', 'nonce');
+
+    if (!is_user_logged_in()) {
+        wp_send_json_error(__('لطفاً ابتدا وارد شوید', 'ibetcoin'));
+    }
+
+    $user_id = get_current_user_id();
+    $amount = isset($_POST['amount']) ? floatval($_POST['amount']) : 0;
+    $wallet_address = isset($_POST['wallet_address']) ? sanitize_text_field($_POST['wallet_address']) : '';
+
+    $min_withdrawal = defined('IBETCOIN_MIN_WITHDRAWAL') ? IBETCOIN_MIN_WITHDRAWAL : 50;
+
+    if ($amount < $min_withdrawal) {
+        wp_send_json_error(sprintf(__('حداقل مبلغ برداشت %s USDT می‌باشد', 'ibetcoin'), $min_withdrawal));
+    }
+
+    if (empty($wallet_address)) {
+        wp_send_json_error(__('آدرس کیف پول را وارد کنید', 'ibetcoin'));
+    }
+
+    // این تابع باید در پلاگینت باشه و درخواست برداشت رو در دیتابیس ثبت کنه
+    $result = ibetcoin_submit_withdrawal($user_id, $amount, $wallet_address);
+
+    if (is_wp_error($result)) {
+        wp_send_json_error($result->get_error_message());
+    } else {
+        wp_send_json_success(__('درخواست برداشت شما ثبت شد و در انتظار تایید است.', 'ibetcoin'));
     }
 }

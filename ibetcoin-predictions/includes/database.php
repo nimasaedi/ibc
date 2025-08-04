@@ -19,20 +19,6 @@ function ibetcoin_create_database_tables() {
     }
     
 	
-
-    // جدول کیف پول کاربران
-    $table_wallets = $wpdb->prefix . 'ibetcoin_wallets';
-    $sql_wallets = "CREATE TABLE $table_wallets (
-        id bigint(20) NOT NULL AUTO_INCREMENT,
-        user_id bigint(20) NOT NULL,
-        wallet_address varchar(100) NOT NULL,
-        status varchar(20) NOT NULL DEFAULT 'pending',
-        created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        PRIMARY KEY (id),
-        KEY user_id (user_id)
-    ) $charset_collate;";
-
     // جدول تراکنش‌ها
     $table_transactions = $wpdb->prefix . 'ibetcoin_transactions';
     $sql_transactions = "CREATE TABLE $table_transactions (
@@ -45,13 +31,16 @@ function ibetcoin_create_database_tables() {
         wallet_address varchar(100) DEFAULT NULL,
         admin_id bigint(20) DEFAULT NULL,
         notes text DEFAULT NULL,
+        tracking_code varchar(20) NOT NULL,
         created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
+        UNIQUE KEY tracking_code_unique (tracking_code),
         KEY user_id (user_id),
         KEY type (type),
         KEY status (status)
     ) $charset_collate;";
+
 
     // جدول پیش‌بینی‌ها
     $table_predictions = $wpdb->prefix . 'ibetcoin_predictions';
